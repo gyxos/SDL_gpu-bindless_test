@@ -1,6 +1,7 @@
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL_main.h>
 #include <SDL3/SDL_gpu.h>
+#include <SDL3/SDL_hints.h>
 #include <SDL3/SDL_log.h>
 #include "gpu.h"
 
@@ -15,6 +16,12 @@ struct App {
 };
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
+#ifdef __APPLE__
+    if (!SDL_GetHint(SDL_HINT_VULKAN_LIBRARY)) {
+        SDL_SetHint(SDL_HINT_VULKAN_LIBRARY, "/opt/homebrew/lib/libvulkan.dylib");
+    }
+#endif
+
     SDL_SetLogPriorities(SDL_LOG_PRIORITY_INFO);
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_Init Failed");
