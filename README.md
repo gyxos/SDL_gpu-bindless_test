@@ -20,6 +20,22 @@ This is a test repo for the proposed SDL GPU bindless api, currently implemented
 - Metal: constant buffer with constant pointers \[\[buffer(30)]] first item in the constant buffer is samplers, otherwise resources
 - Vulkan: samplers (0, 4), sampled textures (0, 5), storage textures (0, 6), storage buffers (0, 7)
 
+## API
+
+```c
+SDL_GPUResourceSet *SDL_CreateGPUResourceSet(SDL_GPUDevice *device, const SDL_GPUResourceSetCreateInfo *createinfo);
+void SDL_BindGPUResourceSet(SDL_GPUCommandBuffer *command_buffer, SDL_GPUResourceSet *resource_set);
+void SDL_ReleaseGPUResourceSet(SDL_GPUDevice *device, SDL_GPUResourceSet *resource_set);
+
+SDL_GPUResourceID SDL_AllocateGPUResourceSampler(SDL_GPUDevice *device, SDL_GPUResourceSet *resource_set, SDL_GPUSampler *sampler);
+SDL_GPUResourceID SDL_AllocateGPUResourceTexture(SDL_GPUDevice *device, SDL_GPUResourceSet *resource_set, SDL_GPUTexture *texture);
+SDL_GPUResourceID SDL_AllocateGPUResourceStorageTexture(SDL_GPUDevice *device, SDL_GPUResourceSet *resource_set, SDL_GPUTexture *texture);
+SDL_GPUResourceID SDL_AllocateGPUResourceStorageBuffer(SDL_GPUDevice *device, SDL_GPUResourceSet *resource_set, SDL_GPUBuffer *buffer);
+
+bool SDL_ResolveGPUResource(SDL_GPUCommandBuffer *command_buffer, SDL_GPUResourceSet *resource_set, SDL_GPUResourceID resource, Uint32 *slot);
+void SDL_ReleaseGPUResource(SDL_GPUDevice *device, SDL_GPUResourceSet *resource_set, SDL_GPUResourceID resource);
+```
+
 ## Example
 
 ```c
