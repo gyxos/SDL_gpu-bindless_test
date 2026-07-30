@@ -12,10 +12,10 @@ const vec2 positions[4] = vec2[4](
 );
 
 const vec2 uvs[4] = vec2[4](
-    vec2(0.0, 0.0),
     vec2(0.0, 1.0),
-    vec2(1.0, 0.0),
-    vec2(1.0, 1.0)
+    vec2(0.0, 0.0),
+    vec2(1.0, 1.0),
+    vec2(1.0, 0.0)
 );
 
 const uint indexes[6] = uint[](

@@ -188,10 +188,14 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
     render_pass = SDL_BeginGPURenderPass(command_buffer, &color_target, 1, NULL);
 
+    Uint32 texture_2_slot;
+    SDL_ResolveGPUResource(command_buffer, app->resource_set, app->texture_2_resourceid, &texture_2_slot);
+
     Uint32 sampler_slot;
     SDL_ResolveGPUResource(command_buffer, app->resource_set, app->sampler_resourceid, &sampler_slot);
     run_pipeline_texture(app, command_buffer, render_pass, app->pipeline_swapchain_texture, TRANSFORM_TOP_LEFT, sampler_slot, texture_1_slot_red);
     run_pipeline_texture(app, command_buffer, render_pass, app->pipeline_swapchain_texture, TRANSFORM_TOP_RIGHT, sampler_slot, texture_1_slot_green);
+    run_pipeline_texture(app, command_buffer, render_pass, app->pipeline_swapchain_texture, TRANSFORM_BOTTOM_LEFT, sampler_slot, texture_2_slot);
     SDL_EndGPURenderPass(render_pass);
 
     SDL_SubmitGPUCommandBuffer(command_buffer);
@@ -282,6 +286,76 @@ SDL_GPUTexture * create_gpu_texture(App *app) {
     });
 }
 
+SDL_GPUTexture * load_gpu_texture(App *app, const char *file) {
+    SDL_Surface *surface = SDL_LoadPNG(file);
+
+    if (surface->format != SDL_PIXELFORMAT_RGBA32) {
+        SDL_Surface *converted = SDL_ConvertSurface(surface, SDL_PIXELFORMAT_RGBA32);
+        SDL_DestroySurface(surface);
+        surface = converted;
+    }
+
+    SDL_GPUTexture *texture = SDL_CreateGPUTexture(app->gpu_device, &(SDL_GPUTextureCreateInfo) {
+        .type = SDL_GPU_TEXTURETYPE_2D,
+        .format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
+        .usage = SDL_GPU_TEXTUREUSAGE_SAMPLER,
+        .width = surface->w,
+        .height = surface->h,
+        .layer_count_or_depth = 1,
+        .num_levels = 1,
+        .sample_count = SDL_GPU_SAMPLECOUNT_1,
+        .props = 0,
+    });
+
+    Uint32 size = surface->w * surface->h * 4;
+    Uint32 row_size = surface->w * 4;
+
+    SDL_GPUTransferBuffer *transfer = SDL_CreateGPUTransferBuffer(app->gpu_device, &(SDL_GPUTransferBufferCreateInfo) {
+        .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
+        .size = size,
+    });
+
+    Uint8 *mapped = SDL_MapGPUTransferBuffer(app->gpu_device, transfer, false);
+
+    for (Uint32 y = 0; y < surface->h; y++) {
+        SDL_memcpy(mapped + y * row_size, surface->pixels + y * surface->pitch, row_size);
+    }
+
+    SDL_UnmapGPUTransferBuffer(app->gpu_device, transfer);
+
+    SDL_GPUCommandBuffer *command_buffer = SDL_AcquireGPUCommandBuffer(app->gpu_device);
+    SDL_GPUCopyPass *copy_pass = SDL_BeginGPUCopyPass(command_buffer);
+
+    SDL_GPUTextureTransferInfo source = {
+        .transfer_buffer = transfer,
+        .offset = 0,
+        .pixels_per_row = surface->w,
+        .rows_per_layer = surface->h,
+    };
+
+    SDL_GPUTextureRegion destination = {
+        .texture = texture,
+        .mip_level = 0,
+        .layer = 0,
+        .x = 0,
+        .y = 0,
+        .z = 0,
+        .w = surface->w,
+        .h = surface->h,
+        .d = 1,
+    };
+
+    SDL_UploadToGPUTexture(copy_pass, &source, &destination, false);
+    SDL_EndGPUCopyPass(copy_pass);
+
+    SDL_SubmitGPUCommandBuffer(command_buffer);
+    SDL_ReleaseGPUTransferBuffer(app->gpu_device, transfer);
+
+    SDL_DestroySurface(surface);
+
+    return texture;
+}
+
 bool init_gpu_resources(App *app) {
     app->resource_set = SDL_CreateGPUResourceSet(app->gpu_device, &(SDL_GPUResourceSetCreateInfo){
         .num_samplers = 8,
@@ -305,7 +379,7 @@ bool init_gpu_resources(App *app) {
     });
 
     app->texture_1 = create_gpu_texture(app);
-    app->texture_2 = create_gpu_texture(app);
+    app->texture_2 = load_gpu_texture(app, "resources/test.png");
 
     app->sampler_resourceid = SDL_AllocateGPUResourceSampler(app->gpu_device, app->resource_set, app->sampler);
     app->texture_1_resourceid = SDL_AllocateGPUResourceTexture(app->gpu_device, app->resource_set, app->texture_1);
