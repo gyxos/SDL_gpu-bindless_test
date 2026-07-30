@@ -1,10 +1,7 @@
 # SDL GPU Bindless Test
 
 This is a test repo for the proposed SDL GPU bindless api, currently implemented for Vulkan only
-
-I've given this a go, currently implemented for Vulkan only
 - In this branch: https://github.com/gyxos/SDL/tree/feature/bindless-gpu
-- And here is an example repo using it: 
 
 ## General Thinking
 
