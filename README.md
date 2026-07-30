@@ -1,7 +1,6 @@
 # SDL GPU Bindless Test
 
-This is a test repo for the proposed SDL GPU bindless api, currently implemented for Vulkan only
-- In this branch: https://github.com/gyxos/SDL/tree/feature/bindless-gpu
+This is a test repo for the proposed SDL GPU bindless api, currently implemented for Vulkan only, which can be found https://github.com/gyxos/SDL/tree/feature/bindless-gpu
 
 ## General Thinking
 
@@ -27,6 +26,10 @@ This is a test repo for the proposed SDL GPU bindless api, currently implemented
 ```c
 // ****************** Setup ******************
 
+// Turn the bindless resources feature flag on
+SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_FEATURE_BINDLESS_RESOURCES_BOOLEAN, true);
+SDL_GPUDevice *device = SDL_CreateGPUDeviceWithProperties(props);
+
 // Create a resource set
 resource_set = SDL_CreateGPUResourceSet(gpu_device, { num_samplers, num_resources });
 
@@ -48,5 +51,9 @@ if (!SDL_ResolveGPUResource(command_buffer, resource_set, resource_id, &slot)) {
 }
 
 // Pass that slot in constants or a buffer etc
-SDL_PushGPUFragmentUniformData(..., constants_with_slot, constants_size);
+Constants constants = {
+    .texture_slot = slot,
+};
+
+SDL_PushGPUFragmentUniformData(..., constants, sizeof(Constants));
 ```
