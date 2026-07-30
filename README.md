@@ -6,8 +6,7 @@ This is a test repo for the proposed SDL GPU bindless api, currently implemented
 
 - One "Global" descriptor heap binding
 - Samplers and Resources - No combined sampler + texture
-- Considered not supporting cycling, but the vulkan memory defrag invalidates backing resources, so we need to detect those which would also mean we detect cycling
-- Considered using indexes, e.g. Allocate/Register function returns an index usually where you create the resource, but this would break on defrag/cycle
+- Resolve the slot/index at render time, this is because of cycling and memory defrag
 
 ## Requirements
 
@@ -21,7 +20,7 @@ This is a test repo for the proposed SDL GPU bindless api, currently implemented
 - Metal: constant buffer with constant pointers \[\[buffer(30)]] first item in the constant buffer is samplers, otherwise resources
 - Vulkan: samplers (0, 4), sampled textures (0, 5), storage textures (0, 6), storage buffers (0, 7)
 
-## API
+## Example
 
 ```c
 // ****************** Setup ******************
