@@ -18,7 +18,10 @@ This is a test repo for the proposed SDL GPU bindless api, currently implemented
 
 - DirectX: samplers (s0, space4), resources (t0, space4) (t0, space5) (t0, space6) etc
 - Metal: constant buffer with constant pointers \[\[buffer(30)]] first item in the constant buffer is samplers, otherwise resources
-- Vulkan: samplers (0, 4), sampled textures (0, 5), storage textures (0, 6), storage buffers (0, 7)
+- Vulkan:
+  - Bindless samplers (0, 0), sampled textures (1, 0), storage textures (2, 0), storage buffers (3, 0)
+  - Vertex uniform buffers: (0-3, 1)
+  - Fragment uniform buffers: (0-3, 2)
 
 ## API
 
