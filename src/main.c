@@ -93,7 +93,7 @@ bool init_gpu_resources(App *app);
 bool load_gpu_shaders(App *app);
 bool init_gpu_pipeline(App *app);
 bool run_pipeline_color(App *app, SDL_GPUCommandBuffer *command_buffer, SDL_GPURenderPass *render_pass, SDL_GPUGraphicsPipeline *graphics_pipeline, Vec4 transform, SDL_FColor color);
-bool run_pipeline_texture(App *app, SDL_GPUCommandBuffer *command_buffer, SDL_GPURenderPass *render_pass, SDL_GPUGraphicsPipeline *graphics_pipeline, Vec4 transform, Uint32 sampler_slot, Uint32 texture_slot);
+bool run_pipeline_texture(App *app, SDL_GPUCommandBuffer *command_buffer, SDL_GPURenderPass *render_pass, SDL_GPUGraphicsPipeline *graphics_pipeline, Vec4 transform, SDL_GPUResourceHandle sampler_slot, SDL_GPUResourceHandle texture_slot);
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 #ifdef __APPLE__
@@ -482,11 +482,11 @@ bool run_pipeline_color(App *app, SDL_GPUCommandBuffer *command_buffer, SDL_GPUR
     return true;
 }
 
-bool run_pipeline_texture(App *app, SDL_GPUCommandBuffer *command_buffer, SDL_GPURenderPass *render_pass, SDL_GPUGraphicsPipeline *graphics_pipeline, Vec4 transform, Uint32 sampler_slot, Uint32 texture_slot) {
-    Uint32 uniform_data[2] = { sampler_slot, texture_slot };
+bool run_pipeline_texture(App *app, SDL_GPUCommandBuffer *command_buffer, SDL_GPURenderPass *render_pass, SDL_GPUGraphicsPipeline *graphics_pipeline, Vec4 transform, SDL_GPUResourceHandle sampler_slot, SDL_GPUResourceHandle texture_slot) {
+    SDL_GPUResourceHandle uniform_data[2] = { sampler_slot, texture_slot };
     SDL_BindGPUGraphicsPipeline(render_pass, graphics_pipeline);
     SDL_PushGPUVertexUniformData(command_buffer, 0, &transform, sizeof(Vec4));
-    SDL_PushGPUFragmentUniformData(command_buffer, 0, &uniform_data, sizeof(Uint32) * 2);
+    SDL_PushGPUFragmentUniformData(command_buffer, 0, &uniform_data, sizeof(SDL_GPUResourceHandle) * 2);
     SDL_DrawGPUPrimitives(render_pass, 6, 1, 0, 0);
 
     return true;
