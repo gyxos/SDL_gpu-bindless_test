@@ -15,9 +15,10 @@ struct App {
     SDL_GPUTexture *texture_1;
     SDL_GPUTexture *texture_2;
 
-    SDL_GPUShader *shader_quad;
-    SDL_GPUShader *shader_color;
-    SDL_GPUShader *shader_texture;
+    SDL_GPUShader *shader_color_vert;
+    SDL_GPUShader *shader_color_frag;
+    SDL_GPUShader *shader_texture_vert;
+    SDL_GPUShader *shader_texture_frag;
 
     SDL_GPUGraphicsPipeline *pipeline_swapchain_color;
     SDL_GPUGraphicsPipeline *pipeline_swapchain_texture;
@@ -357,9 +358,10 @@ bool load_gpu_shaders(App *app) {
     SDL_GPUShaderFormat shader_format = SDL_GetGPUShaderFormats(app->gpu_device);
 
     if ((shader_format & SDL_GPU_SHADERFORMAT_SPIRV) != 0) {
-        app->shader_quad = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_SPIRV, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/vulkan/quad.vert.spv");
-        app->shader_color = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_SPIRV, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/vulkan/color.frag.spv");
-        app->shader_texture = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_SPIRV, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/vulkan/texture.frag.spv");
+        app->shader_color_vert = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_SPIRV, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/vulkan/color.vert.spv");
+        app->shader_texture_vert = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_SPIRV, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/vulkan/texture.vert.spv");
+        app->shader_color_frag = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_SPIRV, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/vulkan/color.frag.spv");
+        app->shader_texture_frag = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_SPIRV, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/vulkan/texture.frag.spv");
 
         return true;
     } else {
@@ -440,10 +442,10 @@ bool init_gpu_pipeline(App *app) {
     SDL_GPUTextureFormat swapchain_format = SDL_GetGPUSwapchainTextureFormat(app->gpu_device, app->window);
     SDL_GPUTextureFormat texture_format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
 
-    app->pipeline_swapchain_color = create_gpu_pipeline(app, app->shader_quad, app->shader_color, swapchain_format);
-    app->pipeline_swapchain_texture = create_gpu_pipeline(app, app->shader_quad, app->shader_texture, swapchain_format);
-    app->pipeline_standard_color = create_gpu_pipeline(app, app->shader_quad, app->shader_color, texture_format);
-    app->pipeline_standard_texture = create_gpu_pipeline(app, app->shader_quad, app->shader_texture, texture_format);
+    app->pipeline_swapchain_color = create_gpu_pipeline(app, app->shader_color_vert, app->shader_color_frag, swapchain_format);
+    app->pipeline_swapchain_texture = create_gpu_pipeline(app, app->shader_texture_vert, app->shader_texture_frag, swapchain_format);
+    app->pipeline_standard_color = create_gpu_pipeline(app, app->shader_color_vert, app->shader_color_frag, texture_format);
+    app->pipeline_standard_texture = create_gpu_pipeline(app, app->shader_texture_vert, app->shader_texture_frag, texture_format);
 
     return app->pipeline_swapchain_color != NULL && app->pipeline_swapchain_texture != NULL && app->pipeline_standard_color != NULL && app->pipeline_standard_texture != NULL;
 }
