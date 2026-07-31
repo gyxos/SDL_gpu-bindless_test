@@ -1,6 +1,6 @@
 #version 450
 
-layout(set = 3, binding = 0) uniform UBO {
+layout(set = 2, binding = 0) uniform UBO {
     vec4 color;
 };
 
