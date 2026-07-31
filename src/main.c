@@ -10,21 +10,15 @@ typedef struct App App;
 struct App {
     SDL_Window *window;
     SDL_GPUDevice *gpu_device;
-    SDL_GPUResourceSet *resource_set;
 
     SDL_GPUSampler *sampler;
     SDL_GPUTexture *texture_1;
     SDL_GPUTexture *texture_2;
 
-    SDL_GPUResourceID sampler_resourceid;
-    SDL_GPUResourceID texture_1_resourceid;
-    SDL_GPUResourceID texture_2_resourceid;
-
     SDL_GPUShader *shader_quad;
     SDL_GPUShader *shader_color;
     SDL_GPUShader *shader_texture;
 
-    bool pipeline_has_init;
     SDL_GPUGraphicsPipeline *pipeline_swapchain_color;
     SDL_GPUGraphicsPipeline *pipeline_swapchain_texture;
     SDL_GPUGraphicsPipeline *pipeline_standard_color;
@@ -138,13 +132,6 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
         return SDL_APP_FAILURE;
     }
 
-    if (!app->pipeline_has_init) {
-        app->pipeline_has_init = true;
-    }
-
-    // Has to be set before SDL_BindGPUGraphicsPipeline / SDL_BindGPUComputePipeline
-    SDL_BindGPUResourceSet(command_buffer, app->resource_set);
-
     SDL_GPUColorTargetInfo color_target = {
         .texture = NULL,
         .mip_level = 0,
@@ -171,14 +158,12 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     SDL_EndGPURenderPass(render_pass);
 
     // When we resolve we get the texture at the time
-    Uint32 texture_1_slot_red;
-    SDL_ResolveGPUResource(command_buffer, app->resource_set, app->texture_1_resourceid, &texture_1_slot_red);
+    SDL_GPUResourceHandle texture_1_slot_red = SDL_ResolveGPUTexture(command_buffer, app->texture_1);
 
     render_pass = SDL_BeginGPURenderPass(command_buffer, &color_target, 1, NULL);
 
     // You can resolve the slot any time after begin render pass
-    Uint32 texture_1_slot_green;
-    SDL_ResolveGPUResource(command_buffer, app->resource_set, app->texture_1_resourceid, &texture_1_slot_green);
+    SDL_GPUResourceHandle texture_1_slot_green = SDL_ResolveGPUTexture(command_buffer, app->texture_1);
 
     run_pipeline_color(app, command_buffer, render_pass, app->pipeline_standard_color, TRANSFORM_IDENTITY, COLOR_GREEN);
     SDL_EndGPURenderPass(render_pass);
@@ -188,11 +173,9 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
     render_pass = SDL_BeginGPURenderPass(command_buffer, &color_target, 1, NULL);
 
-    Uint32 texture_2_slot;
-    SDL_ResolveGPUResource(command_buffer, app->resource_set, app->texture_2_resourceid, &texture_2_slot);
+    SDL_GPUResourceHandle texture_2_slot = SDL_ResolveGPUTexture(command_buffer, app->texture_2);
 
-    Uint32 sampler_slot;
-    SDL_ResolveGPUResource(command_buffer, app->resource_set, app->sampler_resourceid, &sampler_slot);
+    SDL_GPUResourceHandle sampler_slot = SDL_ResolveGPUSampler(command_buffer, app->sampler);
     run_pipeline_texture(app, command_buffer, render_pass, app->pipeline_swapchain_texture, TRANSFORM_TOP_LEFT, sampler_slot, texture_1_slot_red);
     run_pipeline_texture(app, command_buffer, render_pass, app->pipeline_swapchain_texture, TRANSFORM_TOP_RIGHT, sampler_slot, texture_1_slot_green);
     run_pipeline_texture(app, command_buffer, render_pass, app->pipeline_swapchain_texture, TRANSFORM_BOTTOM_LEFT, sampler_slot, texture_2_slot);
@@ -219,7 +202,6 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
     if (app->gpu_device != NULL) {
         if (app->texture_1 != NULL) { SDL_ReleaseGPUTexture(app->gpu_device, app->texture_1); }
         if (app->texture_2 != NULL) { SDL_ReleaseGPUTexture(app->gpu_device, app->texture_2); }
-        if (app->resource_set != NULL) { SDL_ReleaseGPUResourceSet(app->gpu_device, app->resource_set); }
         SDL_DestroyGPUDevice(app->gpu_device);
     }
 }
@@ -255,7 +237,7 @@ bool init_gpu(App *app) {
     SDL_SetStringProperty(props, SDL_PROP_GPU_DEVICE_CREATE_NAME_STRING, "vulkan");
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_DEBUGMODE_BOOLEAN, true);
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_SHADERS_SPIRV_BOOLEAN, true);
-    SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_FEATURE_BINDLESS_RESOURCES_BOOLEAN, true);
+    SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_FEATURE_BINDLESS_BOOLEAN, true);
     SDL_SetPointerProperty(props, SDL_PROP_GPU_DEVICE_CREATE_VULKAN_OPTIONS_POINTER, &options);
 
     SDL_GPUDevice *device = SDL_CreateGPUDeviceWithProperties(props);
@@ -357,11 +339,6 @@ SDL_GPUTexture * load_gpu_texture(App *app, const char *file) {
 }
 
 bool init_gpu_resources(App *app) {
-    app->resource_set = SDL_CreateGPUResourceSet(app->gpu_device, &(SDL_GPUResourceSetCreateInfo){
-        .num_samplers = 8,
-        .num_resources = 256,
-    });
-
     app->sampler = SDL_CreateGPUSampler(app->gpu_device, &(SDL_GPUSamplerCreateInfo) {
         .min_filter = SDL_GPU_FILTER_LINEAR,
         .mag_filter = SDL_GPU_FILTER_LINEAR,
@@ -381,11 +358,7 @@ bool init_gpu_resources(App *app) {
     app->texture_1 = create_gpu_texture(app);
     app->texture_2 = load_gpu_texture(app, "resources/test.png");
 
-    app->sampler_resourceid = SDL_AllocateGPUResourceSampler(app->gpu_device, app->resource_set, app->sampler);
-    app->texture_1_resourceid = SDL_AllocateGPUResourceTexture(app->gpu_device, app->resource_set, app->texture_1);
-    app->texture_2_resourceid = SDL_AllocateGPUResourceTexture(app->gpu_device, app->resource_set, app->texture_2);
-
-    return app->texture_1_resourceid != 0 && app->texture_2_resourceid != 0;
+    return !(app->texture_1 == NULL || app->texture_2 == NULL);
 }
 
 SDL_GPUShader * load_gpu_shader(App *app, SDL_GPUShaderFormat format, SDL_GPUShaderStage stage, const char *file) {

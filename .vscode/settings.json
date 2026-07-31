@@ -1,0 +1,5 @@
+{
+    "cmake.configureSettings": {
+        "CPM_SDL3_SOURCE": "${userHome}/Repos/SDL"
+    }
+}
