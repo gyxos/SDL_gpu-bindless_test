@@ -16,8 +16,12 @@ This is a test repo for the proposed SDL GPU bindless api, currently implemented
 
 ## Binding Model
 
-- DirectX: TBD
-- Metal: TBD
+- DirectX:
+  - space 0: s0 samplers, t0 sampled textures, u0 write textures
+  - space 1: t0 read-only buffers, u0 writable buffers
+  - space 2: b0-b3 vertex uniforms
+  - space 3: b0-b3 fragment uniforms
+- Metal: Handles are resources, no bindings required
 - Vulkan:
   - Bindless samplers (0, 0), sampled textures (1, 0), storage textures (2, 0), storage buffers (3, 0)
   - Vertex uniform buffers: (0-3, 1)
