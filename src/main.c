@@ -207,30 +207,6 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
 }
 
 bool init_gpu(App *app) {
-    VkPhysicalDeviceFeatures vk10 = {
-        .shaderSampledImageArrayDynamicIndexing = VK_TRUE,
-        .shaderStorageBufferArrayDynamicIndexing = VK_TRUE,
-    };
-
-    VkPhysicalDeviceVulkan12Features vk12 =  {
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
-        .descriptorIndexing = VK_TRUE,
-        .descriptorBindingPartiallyBound = VK_TRUE,
-        .runtimeDescriptorArray = VK_TRUE,
-    };
-
-    VkPhysicalDeviceVulkan11Features vk11 = {
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
-        .pNext = &vk12,
-        .shaderDrawParameters = VK_TRUE,
-    };
-
-    SDL_GPUVulkanOptions options = {
-        .vulkan_api_version = VK_API_VERSION_1_2,
-        .feature_list = &vk11,
-        .vulkan_10_physical_device_features = &vk10,
-    };
-
     SDL_PropertiesID props = SDL_CreateProperties();
     if (props == 0) { return false; }
 
@@ -238,7 +214,6 @@ bool init_gpu(App *app) {
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_DEBUGMODE_BOOLEAN, true);
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_SHADERS_SPIRV_BOOLEAN, true);
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_FEATURE_BINDLESS_BOOLEAN, true);
-    SDL_SetPointerProperty(props, SDL_PROP_GPU_DEVICE_CREATE_VULKAN_OPTIONS_POINTER, &options);
 
     SDL_GPUDevice *device = SDL_CreateGPUDeviceWithProperties(props);
 
