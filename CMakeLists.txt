@@ -30,24 +30,40 @@ set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
 
 function(slang_shader NAME)
     set(SOURCE "${SHADER_DIR}/${NAME}.slang")
-    set(OUTPUT_VERT "${SHADER_DIR}/vulkan/${NAME}.vert.spv")
-    set(OUTPUT_FRAG "${SHADER_DIR}/vulkan/${NAME}.frag.spv")
+    set(OUTPUT_VERT_SPV "${SHADER_DIR}/vulkan/${NAME}.vert.spv")
+    set(OUTPUT_FRAG_SPV "${SHADER_DIR}/vulkan/${NAME}.frag.spv")
+    set(OUTPUT_VERT_MTL "${SHADER_DIR}/metal/${NAME}.vert.metallib")
+    set(OUTPUT_FRAG_MTL "${SHADER_DIR}/metal/${NAME}.frag.metallib")
 
     add_custom_command(
-        OUTPUT "${OUTPUT_VERT}"
-        COMMAND "${SLANGC}" "${SOURCE}" -entry vs_main -stage vertex -target spirv -o "${OUTPUT_VERT}"
+        OUTPUT "${OUTPUT_VERT_SPV}"
+        COMMAND "${SLANGC}" "${SOURCE}" -entry vs_main -stage vertex -target spirv -o "${OUTPUT_VERT_SPV}"
         DEPENDS "${SOURCE}"
         VERBATIM
     )
 
     add_custom_command(
-        OUTPUT "${OUTPUT_FRAG}"
-        COMMAND "${SLANGC}" "${SOURCE}" -entry fs_main -stage fragment -target spirv -o "${OUTPUT_FRAG}"
+        OUTPUT "${OUTPUT_FRAG_SPV}"
+        COMMAND "${SLANGC}" "${SOURCE}" -entry fs_main -stage fragment -target spirv -o "${OUTPUT_FRAG_SPV}"
         DEPENDS "${SOURCE}"
         VERBATIM
     )
 
-    set(SHADER_OUTPUTS ${SHADER_OUTPUTS} "${OUTPUT_VERT}" "${OUTPUT_FRAG}" PARENT_SCOPE)
+    add_custom_command(
+        OUTPUT "${OUTPUT_VERT_MTL}"
+        COMMAND "${SLANGC}" "${SOURCE}" -entry vs_main -stage vertex -target metallib -o "${OUTPUT_VERT_MTL}"
+        DEPENDS "${SOURCE}"
+        VERBATIM
+    )
+
+    add_custom_command(
+        OUTPUT "${OUTPUT_FRAG_MTL}"
+        COMMAND "${SLANGC}" "${SOURCE}" -entry fs_main -stage fragment -target metallib -o "${OUTPUT_FRAG_MTL}"
+        DEPENDS "${SOURCE}"
+        VERBATIM
+    )
+
+    set(SHADER_OUTPUTS ${SHADER_OUTPUTS} "${OUTPUT_VERT_SPV}" "${OUTPUT_FRAG_SPV}" "${OUTPUT_VERT_MTL}" "${OUTPUT_FRAG_MTL}" PARENT_SCOPE)
 endfunction()
 
 slang_shader(color)

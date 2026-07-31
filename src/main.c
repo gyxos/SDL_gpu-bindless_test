@@ -61,6 +61,13 @@ const Vec4 TRANSFORM_BOTTOM_LEFT = {
     .w = -0.5f,
 };
 
+const Vec4 TRANSFORM_BOTTOM_RIGHT = {
+    .x = 0.5f,
+    .y = 0.5f,
+    .z = 0.5f,
+    .w = -0.5f,
+};
+
 const SDL_FColor COLOR_BLACK = {
     .r = 0.0f,
     .g = 0.0f,
@@ -180,6 +187,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     run_pipeline_texture(app, command_buffer, render_pass, app->pipeline_swapchain_texture, TRANSFORM_TOP_LEFT, sampler_slot, texture_1_slot_red);
     run_pipeline_texture(app, command_buffer, render_pass, app->pipeline_swapchain_texture, TRANSFORM_TOP_RIGHT, sampler_slot, texture_1_slot_green);
     run_pipeline_texture(app, command_buffer, render_pass, app->pipeline_swapchain_texture, TRANSFORM_BOTTOM_LEFT, sampler_slot, texture_2_slot);
+    run_pipeline_color(app, command_buffer, render_pass, app->pipeline_swapchain_color, TRANSFORM_BOTTOM_RIGHT, COLOR_BLUE);
     SDL_EndGPURenderPass(render_pass);
 
     SDL_SubmitGPUCommandBuffer(command_buffer);
@@ -211,9 +219,10 @@ bool init_gpu(App *app) {
     SDL_PropertiesID props = SDL_CreateProperties();
     if (props == 0) { return false; }
 
-    SDL_SetStringProperty(props, SDL_PROP_GPU_DEVICE_CREATE_NAME_STRING, "vulkan");
+    // SDL_SetStringProperty(props, SDL_PROP_GPU_DEVICE_CREATE_NAME_STRING, "vulkan");
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_DEBUGMODE_BOOLEAN, true);
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_SHADERS_SPIRV_BOOLEAN, true);
+    SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_SHADERS_METALLIB_BOOLEAN, true);
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_FEATURE_BINDLESS_BOOLEAN, true);
 
     SDL_GPUDevice *device = SDL_CreateGPUDeviceWithProperties(props);
@@ -340,11 +349,16 @@ bool init_gpu_resources(App *app) {
 SDL_GPUShader * load_gpu_shader(App *app, SDL_GPUShaderFormat format, SDL_GPUShaderStage stage, const char *file) {
     size_t code_size;
     Uint8 *code = SDL_LoadFile(file, &code_size);
+    const char *entrypoint = "main";
 
-    return SDL_CreateGPUShader(app->gpu_device, &(SDL_GPUShaderCreateInfo) {
+    if (format == SDL_GPU_SHADERFORMAT_METALLIB) {
+        entrypoint = stage == SDL_GPU_SHADERSTAGE_VERTEX ? "vs_main" : "fs_main";
+    }
+
+    SDL_GPUShader *shader = SDL_CreateGPUShader(app->gpu_device, &(SDL_GPUShaderCreateInfo) {
         .code_size = code_size,
         .code = code,
-        .entrypoint = "main",
+        .entrypoint = entrypoint,
         .format = format,
         .stage = stage,
         .num_samplers = 0,
@@ -352,6 +366,12 @@ SDL_GPUShader * load_gpu_shader(App *app, SDL_GPUShaderFormat format, SDL_GPUSha
         .num_storage_buffers = 0,
         .num_uniform_buffers = 1,
     });
+
+    if (shader == NULL) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load shader %s: %s", file, SDL_GetError());
+    }
+
+    return shader;
 }
 
 bool load_gpu_shaders(App *app) {
@@ -362,6 +382,13 @@ bool load_gpu_shaders(App *app) {
         app->shader_texture_vert = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_SPIRV, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/vulkan/texture.vert.spv");
         app->shader_color_frag = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_SPIRV, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/vulkan/color.frag.spv");
         app->shader_texture_frag = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_SPIRV, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/vulkan/texture.frag.spv");
+
+        return true;
+    } else if ((shader_format & SDL_GPU_SHADERFORMAT_METALLIB) != 0) {
+        app->shader_color_vert = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_METALLIB, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/metal/color.vert.metallib");
+        app->shader_texture_vert = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_METALLIB, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/metal/texture.vert.metallib");
+        app->shader_color_frag = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_METALLIB, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/metal/color.frag.metallib");
+        app->shader_texture_frag = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_METALLIB, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/metal/texture.frag.metallib");
 
         return true;
     } else {
