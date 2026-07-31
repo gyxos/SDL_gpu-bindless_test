@@ -254,7 +254,7 @@ SDL_GPUTexture * load_gpu_texture(App *app, const char *file) {
 
     SDL_GPUTexture *texture = SDL_CreateGPUTexture(app->gpu_device, &(SDL_GPUTextureCreateInfo) {
         .type = SDL_GPU_TEXTURETYPE_2D,
-        .format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
+        .format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM_SRGB,
         .usage = SDL_GPU_TEXTUREUSAGE_SAMPLER,
         .width = surface->w,
         .height = surface->h,
