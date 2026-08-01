@@ -1,18 +1,18 @@
 # SDL GPU Bindless Test
 
-This is a test repo for the proposed SDL GPU bindless api, currently implemented for Vulkan only, which can be found https://github.com/gyxos/SDL/tree/feature/bindless-gpu
+This is a test repo for a proposed SDL GPU bindless api, which can be found https://github.com/gyxos/SDL/tree/feature/bindless-gpu
 
 ## General Thinking
 
-- One "Global" descriptor heap binding
-- Samplers and Resources - No combined sampler + texture
+- One "global" descriptor heap binding
+- Samplers and Resources - No combined sampler + textures
 - Resolve the slot/index at render time, this is because of cycling and memory defrag
 
 ## Requirements
 
-- DirectX: Shader Model 6.6 + Resource Tier 3
-- Metal: Metal 3 (macOS 13+, iOS 16+)
-- Vulkan: Vulkan 1.2 features (descriptorIndexing, runtimeDescriptorArray, descriptorBindingPartiallyBound, descriptorBinding*UpdateAfterBind, optional mutableDescriptorType), might be possible to support earlier Vulkan versions
+- DirectX: Shader Model 6.6 Resource Tier 3
+- Metal: Metal 3 (macOS 13, iOS 16, tvOS 16)
+- Vulkan: Vulkan 1.2
 
 ## Binding Model
 
@@ -23,9 +23,9 @@ This is a test repo for the proposed SDL GPU bindless api, currently implemented
 
 - Metal: Handles are resources, no bindings required
 - Vulkan:
-  - Vertex uniform buffers: (0-3, 0)
-  - Fragment uniform buffers: (0-3, 1)
-  - Bindless space 2, using slang with BindlessDescriptorOptions::None binding numbers
+  - set 0 binding 0-3: vertex uniforms or compute uniforms
+  - set 1 binding 0-3: fragment uniforms
+  - set 3: bindless descriptors, bound using slang with BindlessDescriptorOptions::None binding numbers (sampler 0, sampled image 2, storage image 3, storage buffer 7)
 
 ## Example
 
