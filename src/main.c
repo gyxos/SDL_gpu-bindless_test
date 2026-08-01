@@ -22,6 +22,8 @@ struct App {
     SDL_GPUShader *shader_color_frag;
     SDL_GPUShader *shader_texture_vert;
     SDL_GPUShader *shader_texture_frag;
+    size_t compute_code_size;
+    Uint8 *compute_code;
 
     SDL_GPUGraphicsPipeline *pipeline_swapchain_color;
     SDL_GPUGraphicsPipeline *pipeline_swapchain_texture;
@@ -229,7 +231,7 @@ bool init_gpu(App *app) {
     SDL_PropertiesID props = SDL_CreateProperties();
     if (props == 0) { return false; }
 
-    // SDL_SetStringProperty(props, SDL_PROP_GPU_DEVICE_CREATE_NAME_STRING, "vulkan");
+    SDL_SetStringProperty(props, SDL_PROP_GPU_DEVICE_CREATE_NAME_STRING, "vulkan");
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_DEBUGMODE_BOOLEAN, true);
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_SHADERS_DXIL_BOOLEAN, true);
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_SHADERS_SPIRV_BOOLEAN, true);
@@ -400,29 +402,42 @@ bool load_gpu_shaders(App *app) {
     SDL_GPUShaderFormat shader_format = SDL_GetGPUShaderFormats(app->gpu_device);
 
     if ((shader_format & SDL_GPU_SHADERFORMAT_SPIRV) != 0) {
-        app->shader_color_vert = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_SPIRV, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/color/vert.spv");
-        app->shader_color_frag = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_SPIRV, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/color/frag.spv");
-        app->shader_texture_vert = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_SPIRV, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/texture/vert.spv");
-        app->shader_texture_frag = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_SPIRV, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/texture/frag.spv");
-
-        return true;
+        shader_format = SDL_GPU_SHADERFORMAT_SPIRV;
+        app->shader_color_vert = load_gpu_shader(app, shader_format, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/color/vert.spv");
+        app->shader_color_frag = load_gpu_shader(app, shader_format, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/color/frag.spv");
+        app->shader_texture_vert = load_gpu_shader(app, shader_format, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/texture/vert.spv");
+        app->shader_texture_frag = load_gpu_shader(app, shader_format, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/texture/frag.spv");
+        app->compute_code = load_gpu_compute(app, "shaders/color/compute.spv", &app->compute_code_size);
     } else if ((shader_format & SDL_GPU_SHADERFORMAT_DXIL) != 0) {
-        app->shader_color_vert = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_DXIL, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/color/vert.dxil");
-        app->shader_color_frag = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_DXIL, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/color/frag.dxil");
-        app->shader_texture_vert = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_DXIL, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/texture/vert.dxil");
-        app->shader_texture_frag = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_DXIL, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/texture/frag.dxil");
-
-        return true;
+        shader_format = SDL_GPU_SHADERFORMAT_DXIL;
+        app->shader_color_vert = load_gpu_shader(app, shader_format, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/color/vert.dxil");
+        app->shader_color_frag = load_gpu_shader(app, shader_format, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/color/frag.dxil");
+        app->shader_texture_vert = load_gpu_shader(app, shader_format, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/texture/vert.dxil");
+        app->shader_texture_frag = load_gpu_shader(app, shader_format, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/texture/frag.dxil");
+        app->compute_code = load_gpu_compute(app, "shaders/color/compute.dxil", &app->compute_code_size);
     } else if ((shader_format & SDL_GPU_SHADERFORMAT_METALLIB) != 0) {
-        app->shader_color_vert = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_METALLIB, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/color/vert.metallib");
-        app->shader_color_frag = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_METALLIB, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/color/frag.metallib");
-        app->shader_texture_vert = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_METALLIB, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/texture/vert.metallib");
-        app->shader_texture_frag = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_METALLIB, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/texture/frag.metallib");
-
-        return true;
+        shader_format = SDL_GPU_SHADERFORMAT_METALLIB;
+        app->shader_color_vert = load_gpu_shader(app, shader_format, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/color/vert.metallib");
+        app->shader_color_frag = load_gpu_shader(app, shader_format, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/color/frag.metallib");
+        app->shader_texture_vert = load_gpu_shader(app, shader_format, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/texture/vert.metallib");
+        app->shader_texture_frag = load_gpu_shader(app, shader_format, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/texture/frag.metallib");
+        app->compute_code = load_gpu_compute(app, "shaders/color/compute.metallib", &app->compute_code_size);
     } else {
         return false;
     }
+
+    app->pipeline_compute_color = SDL_CreateGPUComputePipeline(app->gpu_device, &(SDL_GPUComputePipelineCreateInfo) {
+        .code_size = app->compute_code_size,
+        .code = app->compute_code,
+        .entrypoint = "main",
+        .format = shader_format,
+        .num_uniform_buffers = 1,
+        .threadcount_x = 16,
+        .threadcount_y = 16,
+        .threadcount_z = 1,
+    });
+
+    return true;
 }
 
 SDL_GPUGraphicsPipeline *create_gpu_pipeline(App *app, SDL_GPUShader *vertex_shader, SDL_GPUShader *fragment_shader, SDL_GPUTextureFormat target_format) {
@@ -502,20 +517,6 @@ bool init_gpu_pipeline(App *app) {
     app->pipeline_swapchain_texture = create_gpu_pipeline(app, app->shader_texture_vert, app->shader_texture_frag, swapchain_format);
     app->pipeline_standard_color = create_gpu_pipeline(app, app->shader_color_vert, app->shader_color_frag, texture_format);
     app->pipeline_standard_texture = create_gpu_pipeline(app, app->shader_texture_vert, app->shader_texture_frag, texture_format);
-
-    SDL_GPUShaderFormat shader_format = SDL_GetGPUShaderFormats(app->gpu_device);
-    size_t compute_code_size;
-    Uint8 *compute_code = load_gpu_compute(app, "shaders/color/compute.dxil", &compute_code_size);
-    app->pipeline_compute_color = SDL_CreateGPUComputePipeline(app->gpu_device, &(SDL_GPUComputePipelineCreateInfo) {
-        .code_size = compute_code_size,
-        .code = compute_code,
-        .entrypoint = "main",
-        .format = SDL_GPU_SHADERFORMAT_DXIL,
-        .num_uniform_buffers = 1,
-        .threadcount_x = 16,
-        .threadcount_y = 16,
-        .threadcount_z = 1,
-    });
 
     return app->pipeline_swapchain_color != NULL && app->pipeline_swapchain_texture != NULL && app->pipeline_standard_color != NULL && app->pipeline_standard_texture != NULL;
 }
