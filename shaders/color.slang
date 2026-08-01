@@ -1,4 +1,4 @@
-#include "quad.slangh"
+#include "common.slangh"
 
 struct VertUniforms {
     float4 transform;

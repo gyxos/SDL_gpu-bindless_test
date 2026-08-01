@@ -1,9 +1,4 @@
-#include "quad.slangh"
-
-export T getDescriptorFromHandle<T>(DescriptorHandle<T> handle) where T : IOpaqueDescriptor
-{
-    return defaultGetDescriptorFromHandle(handle, BindlessDescriptorOptions::None);
-}
+#include "common.slangh"
 
 struct VertUniforms {
     float4 transform;

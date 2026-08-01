@@ -1,3 +1,8 @@
+export T getDescriptorFromHandle<T>(DescriptorHandle<T> handle) where T : IOpaqueDescriptor
+{
+    return defaultGetDescriptorFromHandle(handle, BindlessDescriptorOptions::None);
+}
+
 static const float2 QUAD_POSITION[4] =
 {
     float2(-1.0, -1.0),
