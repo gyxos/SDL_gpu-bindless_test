@@ -231,7 +231,7 @@ bool init_gpu(App *app) {
     SDL_PropertiesID props = SDL_CreateProperties();
     if (props == 0) { return false; }
 
-    SDL_SetStringProperty(props, SDL_PROP_GPU_DEVICE_CREATE_NAME_STRING, "vulkan");
+    // SDL_SetStringProperty(props, SDL_PROP_GPU_DEVICE_CREATE_NAME_STRING, "vulkan");
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_DEBUGMODE_BOOLEAN, true);
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_SHADERS_DXIL_BOOLEAN, true);
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_SHADERS_SPIRV_BOOLEAN, true);
@@ -389,7 +389,6 @@ SDL_GPUShader * load_gpu_shader(App *app, SDL_GPUShaderFormat format, SDL_GPUSha
 
 Uint8 * load_gpu_compute(App *app, const char *file, size_t *code_size) {
     Uint8 *code = SDL_LoadFile(file, code_size);
-    const char *entrypoint = "main";
 
     if (code == NULL) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load shader %s: %s", file, SDL_GetError());
@@ -429,7 +428,7 @@ bool load_gpu_shaders(App *app) {
     app->pipeline_compute_color = SDL_CreateGPUComputePipeline(app->gpu_device, &(SDL_GPUComputePipelineCreateInfo) {
         .code_size = app->compute_code_size,
         .code = app->compute_code,
-        .entrypoint = "main",
+        .entrypoint = shader_format == SDL_GPU_SHADERFORMAT_METALLIB ? "cs_main" : "main",
         .format = shader_format,
         .num_uniform_buffers = 1,
         .threadcount_x = 16,
