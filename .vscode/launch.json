@@ -20,7 +20,9 @@
             "request": "launch",
             "program": "${workspaceRoot}/build/SDL3_bindless_test",
             "args": [],
-            "cwd": "${workspaceFolder}"
+            "preLaunchTask": "CMake: build",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
         },
     ]
 }

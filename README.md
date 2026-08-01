@@ -25,7 +25,7 @@ This is a test repo for a proposed SDL GPU bindless api, which can be found http
 - Vulkan:
   - set 0 binding 0-3: vertex uniforms or compute uniforms
   - set 1 binding 0-3: fragment uniforms
-  - set 3: bindless descriptors, bound using slang with BindlessDescriptorOptions::None binding numbers (sampler 0, sampled image 2, storage image 3, storage buffer 7)
+  - set 2: bindless descriptors, bound using slang with BindlessDescriptorOptions::None binding numbers (sampler 0, sampled image 2, storage image 3, storage buffer 7)
 
 ## Example
 

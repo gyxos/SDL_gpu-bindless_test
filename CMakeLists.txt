@@ -28,9 +28,12 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     SDL3::SDL3-static
 )
 
-find_program(SLANGC NAMES slangc REQUIRED)
-find_program(DXC NAMES DXC REQUIRED)
-find_program(METALC NAMES metal HINTS "C:/Program Files/Metal Developer Tools/bin")
+find_program(SLANGC NAMES slangc REQUIRED
+    HINTS "~/VulkanSDK/1.4.357.0/macOS/bin/")
+find_program(METALC NAMES metal REQUIRED
+    HINTS
+        "C:/Program Files/Metal Developer Tools/bin"
+        "/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.6.109.0.FFEA1u/Metal.xctoolchain/usr/bin")
 get_filename_component(METAL_BIN_DIR "${METALC}" DIRECTORY)
 
 set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
@@ -46,14 +49,14 @@ function(slang_shader NAME)
 
     add_custom_command(
         OUTPUT "${OUTPUT_VERT_SPV}"
-        COMMAND "${SLANGC}" "${SOURCE}" -entry vs_main -stage vertex -target spirv -bindless-space-index 3 -o "${OUTPUT_VERT_SPV}"
+        COMMAND "${SLANGC}" "${SOURCE}" -entry vs_main -stage vertex -target spirv -bindless-space-index 2 -o "${OUTPUT_VERT_SPV}"
         DEPENDS "${SOURCE}"
         VERBATIM
     )
 
     add_custom_command(
         OUTPUT "${OUTPUT_FRAG_SPV}"
-        COMMAND "${SLANGC}" "${SOURCE}" -entry fs_main -stage fragment -target spirv -bindless-space-index 3 -o "${OUTPUT_FRAG_SPV}"
+        COMMAND "${SLANGC}" "${SOURCE}" -entry fs_main -stage fragment -target spirv -bindless-space-index 2 -o "${OUTPUT_FRAG_SPV}"
         DEPENDS "${SOURCE}"
         VERBATIM
     )
@@ -97,7 +100,7 @@ function(slang_compute NAME)
 
     add_custom_command(
         OUTPUT "${OUTPUT_SPV}"
-        COMMAND "${SLANGC}" "${SOURCE}" -entry cs_main -stage compute -target spirv -bindless-space-index 3 -o "${OUTPUT_SPV}"
+        COMMAND "${SLANGC}" "${SOURCE}" -entry cs_main -stage compute -target spirv -bindless-space-index 2 -o "${OUTPUT_SPV}"
         DEPENDS "${SOURCE}"
         VERBATIM
     )
