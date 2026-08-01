@@ -42,14 +42,14 @@ function(slang_shader NAME)
 
     add_custom_command(
         OUTPUT "${OUTPUT_VERT_SPV}"
-        COMMAND "${SLANGC}" "${SOURCE}" -entry vs_main -stage vertex -target spirv -bindless-space-index 3 -o "${OUTPUT_VERT_SPV}"
+        COMMAND "${SLANGC}" "${SOURCE}" -entry vs_main -stage vertex -target spirv -bindless-space-index 2 -o "${OUTPUT_VERT_SPV}"
         DEPENDS "${SOURCE}"
         VERBATIM
     )
 
     add_custom_command(
         OUTPUT "${OUTPUT_FRAG_SPV}"
-        COMMAND "${SLANGC}" "${SOURCE}" -entry fs_main -stage fragment -target spirv -bindless-space-index 3 -o "${OUTPUT_FRAG_SPV}"
+        COMMAND "${SLANGC}" "${SOURCE}" -entry fs_main -stage fragment -target spirv -bindless-space-index 2 -o "${OUTPUT_FRAG_SPV}"
         DEPENDS "${SOURCE}"
         VERBATIM
     )
