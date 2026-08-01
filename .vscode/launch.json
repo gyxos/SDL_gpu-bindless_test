@@ -11,7 +11,8 @@
             "program": "${workspaceRoot}/build/SDL3_bindless_test",
             "args": [],
             "cwd": "${workspaceRoot}",
-            "preLaunchTask": "CMake: build"
+            "preLaunchTask": "CMake: build",
+            "console": "integratedTerminal"
         },
         {
             "name": "(MacOS + Linux) Launch",

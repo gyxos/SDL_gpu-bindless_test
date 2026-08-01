@@ -1,9 +1,12 @@
+#include <string.h>
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL_main.h>
 #include <SDL3/SDL_gpu.h>
 #include <SDL3/SDL_hints.h>
 #include <SDL3/SDL_log.h>
 #include <vulkan/vulkan.h>
+
+#define TEXTURE_SIZE 256
 
 typedef struct App App;
 
@@ -24,6 +27,8 @@ struct App {
     SDL_GPUGraphicsPipeline *pipeline_swapchain_texture;
     SDL_GPUGraphicsPipeline *pipeline_standard_color;
     SDL_GPUGraphicsPipeline *pipeline_standard_texture;
+
+    SDL_GPUComputePipeline *pipeline_compute_color;
 };
 
 typedef struct Vec4 {
@@ -101,6 +106,7 @@ bool init_gpu_resources(App *app);
 bool load_gpu_shaders(App *app);
 bool init_gpu_pipeline(App *app);
 bool run_pipeline_color(App *app, SDL_GPUCommandBuffer *command_buffer, SDL_GPURenderPass *render_pass, SDL_GPUGraphicsPipeline *graphics_pipeline, Vec4 transform, SDL_FColor color);
+bool run_compute_color(App *app, SDL_GPUCommandBuffer *command_buffer, SDL_GPUComputePass *compute_pass, SDL_GPUComputePipeline *compute_pipeline, SDL_GPUResourceHandle texture, SDL_FColor color);
 bool run_pipeline_texture(App *app, SDL_GPUCommandBuffer *command_buffer, SDL_GPURenderPass *render_pass, SDL_GPUGraphicsPipeline *graphics_pipeline, Vec4 transform, SDL_GPUResourceHandle sampler_slot, SDL_GPUResourceHandle texture_slot);
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
@@ -166,24 +172,28 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     SDL_EndGPURenderPass(render_pass);
 
     // When we resolve we get the texture at the time
-    SDL_GPUResourceHandle texture_1_slot_red = SDL_ResolveGPUTexture(command_buffer, app->texture_1);
+    SDL_GPUResourceHandle texture_1_slot_red = SDL_AcquireGPUTextureHandle(command_buffer, app->texture_1, NULL);
 
-    render_pass = SDL_BeginGPURenderPass(command_buffer, &color_target, 1, NULL);
+    SDL_GPUComputePass *compute_pass = SDL_BeginGPUComputePass(command_buffer, NULL, 0, NULL, 0);
+    SDL_GPUResourceHandle texture_1_slot_green = SDL_AcquireGPUTextureHandle(command_buffer, app->texture_1, &(SDL_GPUStorageTextureReadWriteBinding) {
+        .mip_level = 0,
+        .layer = 0,
+        .cycle = true,
+    });
 
-    // You can resolve the slot any time after begin render pass
-    SDL_GPUResourceHandle texture_1_slot_green = SDL_ResolveGPUTexture(command_buffer, app->texture_1);
+    run_compute_color(app, command_buffer, compute_pass, app->pipeline_compute_color, texture_1_slot_green, COLOR_GREEN);
+    SDL_EndGPUComputePass(compute_pass);
 
-    run_pipeline_color(app, command_buffer, render_pass, app->pipeline_standard_color, TRANSFORM_IDENTITY, COLOR_GREEN);
-    SDL_EndGPURenderPass(render_pass);
+    texture_1_slot_green = SDL_AcquireGPUTextureHandle(command_buffer, app->texture_1, NULL);
 
     color_target.texture = swapchain_texture;
     color_target.cycle = false;
 
     render_pass = SDL_BeginGPURenderPass(command_buffer, &color_target, 1, NULL);
 
-    SDL_GPUResourceHandle texture_2_slot = SDL_ResolveGPUTexture(command_buffer, app->texture_2);
+    SDL_GPUResourceHandle texture_2_slot = SDL_AcquireGPUTextureHandle(command_buffer, app->texture_2, NULL);
 
-    SDL_GPUResourceHandle sampler_slot = SDL_ResolveGPUSampler(command_buffer, app->sampler);
+    SDL_GPUResourceHandle sampler_slot = SDL_AcquireGPUSamplerHandle(command_buffer, app->sampler);
     run_pipeline_texture(app, command_buffer, render_pass, app->pipeline_swapchain_texture, TRANSFORM_TOP_LEFT, sampler_slot, texture_1_slot_red);
     run_pipeline_texture(app, command_buffer, render_pass, app->pipeline_swapchain_texture, TRANSFORM_TOP_RIGHT, sampler_slot, texture_1_slot_green);
     run_pipeline_texture(app, command_buffer, render_pass, app->pipeline_swapchain_texture, TRANSFORM_BOTTOM_LEFT, sampler_slot, texture_2_slot);
@@ -244,9 +254,9 @@ SDL_GPUTexture * create_gpu_texture(App *app) {
     return SDL_CreateGPUTexture(app->gpu_device, &(SDL_GPUTextureCreateInfo) {
         .type = SDL_GPU_TEXTURETYPE_2D,
         .format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
-        .usage = SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_COLOR_TARGET,
-        .width = 256,
-        .height = 256,
+        .usage = SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_COMPUTE_STORAGE_WRITE,
+        .width = TEXTURE_SIZE,
+        .height = TEXTURE_SIZE,
         .layer_count_or_depth = 1,
         .num_levels = 1,
         .sample_count = SDL_GPU_SAMPLECOUNT_1,
@@ -375,6 +385,17 @@ SDL_GPUShader * load_gpu_shader(App *app, SDL_GPUShaderFormat format, SDL_GPUSha
     return shader;
 }
 
+Uint8 * load_gpu_compute(App *app, const char *file, size_t *code_size) {
+    Uint8 *code = SDL_LoadFile(file, code_size);
+    const char *entrypoint = "main";
+
+    if (code == NULL) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load shader %s: %s", file, SDL_GetError());
+    }
+
+    return code;
+}
+
 bool load_gpu_shaders(App *app) {
     SDL_GPUShaderFormat shader_format = SDL_GetGPUShaderFormats(app->gpu_device);
 
@@ -482,6 +503,20 @@ bool init_gpu_pipeline(App *app) {
     app->pipeline_standard_color = create_gpu_pipeline(app, app->shader_color_vert, app->shader_color_frag, texture_format);
     app->pipeline_standard_texture = create_gpu_pipeline(app, app->shader_texture_vert, app->shader_texture_frag, texture_format);
 
+    SDL_GPUShaderFormat shader_format = SDL_GetGPUShaderFormats(app->gpu_device);
+    size_t compute_code_size;
+    Uint8 *compute_code = load_gpu_compute(app, "shaders/color/compute.dxil", &compute_code_size);
+    app->pipeline_compute_color = SDL_CreateGPUComputePipeline(app->gpu_device, &(SDL_GPUComputePipelineCreateInfo) {
+        .code_size = compute_code_size,
+        .code = compute_code,
+        .entrypoint = "main",
+        .format = SDL_GPU_SHADERFORMAT_DXIL,
+        .num_uniform_buffers = 1,
+        .threadcount_x = 16,
+        .threadcount_y = 16,
+        .threadcount_z = 1,
+    });
+
     return app->pipeline_swapchain_color != NULL && app->pipeline_swapchain_texture != NULL && app->pipeline_standard_color != NULL && app->pipeline_standard_texture != NULL;
 }
 
@@ -490,6 +525,26 @@ bool run_pipeline_color(App *app, SDL_GPUCommandBuffer *command_buffer, SDL_GPUR
     SDL_PushGPUVertexUniformData(command_buffer, 0, &transform, sizeof(Vec4));
     SDL_PushGPUFragmentUniformData(command_buffer, 0, &color, sizeof(Vec4));
     SDL_DrawGPUPrimitives(render_pass, 6, 1, 0, 0);
+
+    return true;
+}
+
+typedef struct ComputeColorConstants {
+    SDL_GPUResourceHandle texture;
+    SDL_FColor color;
+} ComputeColorConstants;
+
+bool run_compute_color(App *app, SDL_GPUCommandBuffer *command_buffer, SDL_GPUComputePass *compute_pass, SDL_GPUComputePipeline *compute_pipeline, SDL_GPUResourceHandle texture, SDL_FColor color) {
+    ComputeColorConstants constants = {
+        .texture = texture,
+        .color = color,
+    };
+
+    Uint32 groupcount = (TEXTURE_SIZE + 15) / 16;
+
+    SDL_BindGPUComputePipeline(compute_pass, compute_pipeline);
+    SDL_PushGPUComputeUniformData(command_buffer, 0, &constants, sizeof(constants));
+    SDL_DispatchGPUCompute(compute_pass, groupcount, groupcount, 1);
 
     return true;
 }
