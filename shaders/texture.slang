@@ -1,28 +1,11 @@
 #include "quad.slangh"
 
-[vk::binding(0, 0)] __DynamicResource<__DynamicResourceKind.Sampler> samplers[];
-[vk::binding(1, 0)] __DynamicResource<__DynamicResourceKind.General> textures[];
-
-export T getDescriptorFromHandle<T>(DescriptorHandle<T> handle) where T : IOpaqueDescriptor
-{
-    __target_switch
-    {
-    case spirv:
-        if (T.kind == DescriptorKind.Sampler)
-            return samplers[((uint2)handle).x].asOpaqueDescriptor<T>();
-        else
-            return textures[((uint2)handle).x].asOpaqueDescriptor<T>();
-    default:
-        return defaultGetDescriptorFromHandle(handle);
-    }
-}
-
 struct VertUniforms {
     float4 transform;
 };
 
-[vk::binding(0, 1)]
-ConstantBuffer<VertUniforms> v_uniforms : register(b0, space1);
+[vk::binding(0, 0)]
+ConstantBuffer<VertUniforms> v_uniforms : register(b0, space0);
 
 struct VertOut {
     float4 position : SV_Position;
@@ -46,8 +29,8 @@ struct FragUniforms {
     DescriptorHandle<Texture2D> texture;
 };
 
-[vk::binding(0, 2)]
-ConstantBuffer<FragUniforms> f_uniforms : register(b0, space2);
+[vk::binding(0, 1)]
+ConstantBuffer<FragUniforms> f_uniforms : register(b0, space1);
 
 [shader("fragment")]
 float4 fs_main(VertOut fin) : SV_Target0 {

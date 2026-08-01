@@ -17,14 +17,15 @@ This is a test repo for the proposed SDL GPU bindless api, currently implemented
 ## Binding Model
 
 - DirectX:
-  - space 1: b0-b3 vertex uniforms
-  - space 2: b0-b3 fragment uniforms
+  - space 0: b0-b3 vertex uniforms
+  - space 1: b0-b3 fragment uniforms
   - global: sampler + resource descriptors
 - Metal: Handles are resources, no bindings required
 - Vulkan:
-  - Bindless samplers (0, 0), sampled textures (1, 0), storage textures (2, 0), storage buffers (3, 0)
-  - Vertex uniform buffers: (0-3, 1)
-  - Fragment uniform buffers: (0-3, 2)
+  - Vertex uniform buffers: (0-3, 0)
+  - Fragment uniform buffers: (0-3, 1)
+  - Bindless space 3, using slangc default bindings (-bindless-space-index 3)
+    - https://shader-slang.org/slang/user-guide/convenience-features - look for Default Slang Behavior heading
 
 ## Example
 

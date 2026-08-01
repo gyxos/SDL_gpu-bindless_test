@@ -4,8 +4,8 @@ struct VertUniforms {
     float4 transform;
 };
 
-[[vk::binding(0, 1)]]
-ConstantBuffer<VertUniforms> v_uniforms : register(b0, space1);
+[[vk::binding(0, 0)]]
+ConstantBuffer<VertUniforms> v_uniforms : register(b0, space0);
 
 struct VertOut {
     float4 position : SV_Position;
@@ -26,8 +26,8 @@ struct FragUniforms {
     float4 color;
 };
 
-[[vk::binding(0, 2)]]
-ConstantBuffer<FragUniforms> f_uniforms : register(b0, space2);
+[[vk::binding(0, 1)]]
+ConstantBuffer<FragUniforms> f_uniforms : register(b0, space1);
 
 [shader("fragment")]
 float4 fs_main(VertOut fin) : SV_Target0 {
