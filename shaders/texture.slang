@@ -21,7 +21,7 @@ struct VertUniforms {
     float4 transform;
 };
 
-[[vk::binding(0, 1)]]
+[vk::binding(0, 1)]
 ConstantBuffer<VertUniforms> v_uniforms : register(b0, space1);
 
 struct VertOut {
@@ -46,7 +46,7 @@ struct FragUniforms {
     DescriptorHandle<Texture2D> texture;
 };
 
-[[vk::binding(0, 2)]]
+[vk::binding(0, 2)]
 ConstantBuffer<FragUniforms> f_uniforms : register(b0, space2);
 
 [shader("fragment")]

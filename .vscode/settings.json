@@ -1,7 +1,6 @@
 {
     "editor.formatOnSave": false,
     "cmake.configureSettings": {
-        "SLANGC": "${userHome}/Apps/slang-2026.13.1-macos-aarch64/bin/slangc",
-        "CPM_SDL3_SOURCE": "${userHome}/Repos/SDL",
+        "CPM_SDL3_SOURCE": "C:/Users/logan-gyxos/ReposThirdParty/SDL",
     },
 }

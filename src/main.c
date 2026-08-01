@@ -220,6 +220,7 @@ bool init_gpu(App *app) {
     if (props == 0) { return false; }
 
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_DEBUGMODE_BOOLEAN, true);
+    SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_SHADERS_DXIL_BOOLEAN, true);
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_SHADERS_SPIRV_BOOLEAN, true);
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_SHADERS_METALLIB_BOOLEAN, true);
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_FEATURE_BINDLESS_BOOLEAN, true);
@@ -377,17 +378,24 @@ bool load_gpu_shaders(App *app) {
     SDL_GPUShaderFormat shader_format = SDL_GetGPUShaderFormats(app->gpu_device);
 
     if ((shader_format & SDL_GPU_SHADERFORMAT_SPIRV) != 0) {
-        app->shader_color_vert = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_SPIRV, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/vulkan/color.vert.spv");
-        app->shader_texture_vert = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_SPIRV, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/vulkan/texture.vert.spv");
-        app->shader_color_frag = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_SPIRV, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/vulkan/color.frag.spv");
-        app->shader_texture_frag = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_SPIRV, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/vulkan/texture.frag.spv");
+        app->shader_color_vert = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_SPIRV, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/color/vert.spv");
+        app->shader_color_frag = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_SPIRV, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/color/frag.spv");
+        app->shader_texture_vert = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_SPIRV, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/texture/vert.spv");
+        app->shader_texture_frag = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_SPIRV, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/texture/frag.spv");
+
+        return true;
+    } else if ((shader_format & SDL_GPU_SHADERFORMAT_DXIL) != 0) {
+        app->shader_color_vert = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_DXIL, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/color/vert.dxil");
+        app->shader_color_frag = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_DXIL, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/color/frag.dxil");
+        app->shader_texture_vert = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_DXIL, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/texture/vert.dxil");
+        app->shader_texture_frag = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_DXIL, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/texture/frag.dxil");
 
         return true;
     } else if ((shader_format & SDL_GPU_SHADERFORMAT_METALLIB) != 0) {
-        app->shader_color_vert = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_METALLIB, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/metal/color.vert.metallib");
-        app->shader_texture_vert = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_METALLIB, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/metal/texture.vert.metallib");
-        app->shader_color_frag = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_METALLIB, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/metal/color.frag.metallib");
-        app->shader_texture_frag = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_METALLIB, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/metal/texture.frag.metallib");
+        app->shader_color_vert = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_METALLIB, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/color/vert.metallib");
+        app->shader_color_frag = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_METALLIB, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/color/frag.metallib");
+        app->shader_texture_vert = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_METALLIB, SDL_GPU_SHADERSTAGE_VERTEX, "shaders/texture/vert.metallib");
+        app->shader_texture_frag = load_gpu_shader(app, SDL_GPU_SHADERFORMAT_METALLIB, SDL_GPU_SHADERSTAGE_FRAGMENT, "shaders/texture/frag.metallib");
 
         return true;
     } else {

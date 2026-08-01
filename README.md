@@ -10,17 +10,16 @@ This is a test repo for the proposed SDL GPU bindless api, currently implemented
 
 ## Requirements
 
-- DirectX: Shader Model 6.0 + Resource Tier 2 (already a soft requirement)
+- DirectX: Shader Model 6.6 + Resource Tier 3
 - Metal: Metal 3 (macOS 13+, iOS 16+)
 - Vulkan: Vulkan 1.2 features (descriptorIndexing, runtimeDescriptorArray, descriptorBindingPartiallyBound, descriptorBinding*UpdateAfterBind, optional mutableDescriptorType), might be possible to support earlier Vulkan versions
 
 ## Binding Model
 
 - DirectX:
-  - space 0: s0 samplers, t0 sampled textures, u0 write textures
-  - space 1: t0 read-only buffers, u0 writable buffers
-  - space 2: b0-b3 vertex uniforms
-  - space 3: b0-b3 fragment uniforms
+  - space 1: b0-b3 vertex uniforms
+  - space 2: b0-b3 fragment uniforms
+  - global: sampler + resource descriptors
 - Metal: Handles are resources, no bindings required
 - Vulkan:
   - Bindless samplers (0, 0), sampled textures (1, 0), storage textures (2, 0), storage buffers (3, 0)
