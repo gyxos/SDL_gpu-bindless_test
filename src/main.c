@@ -112,12 +112,6 @@ bool run_compute_color(App *app, SDL_GPUCommandBuffer *command_buffer, SDL_GPUCo
 bool run_pipeline_texture(App *app, SDL_GPUCommandBuffer *command_buffer, SDL_GPURenderPass *render_pass, SDL_GPUGraphicsPipeline *graphics_pipeline, Vec4 transform, SDL_GPUResourceHandle sampler_slot, SDL_GPUResourceHandle texture_slot);
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
-#ifdef __APPLE__
-    if (!SDL_GetHint(SDL_HINT_VULKAN_LIBRARY)) {
-        SDL_SetHint(SDL_HINT_VULKAN_LIBRARY, "/opt/homebrew/lib/libvulkan.dylib");
-    }
-#endif
-
     SDL_SetLogPriorities(SDL_LOG_PRIORITY_INFO);
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_Init Failed");

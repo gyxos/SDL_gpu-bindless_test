@@ -28,6 +28,24 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     SDL3::SDL3-static
 )
 
+if(APPLE)
+    find_library(MOLTENVK_LIBRARY NAMES libMoltenVK.a
+        PATHS /opt/homebrew/lib /usr/local/lib
+        REQUIRED)
+
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        ${MOLTENVK_LIBRARY}
+        "-framework Metal"
+        "-framework QuartzCore"
+        "-framework IOSurface"
+        "-framework IOKit"
+        "-framework AppKit"
+        "-framework CoreGraphics"
+        "-framework Foundation"
+        "-lc++"
+    )
+endif()
+
 find_program(SLANGC NAMES slangc REQUIRED
     HINTS "~/VulkanSDK/1.4.357.0/macOS/bin/")
 find_program(METALC NAMES metal REQUIRED
