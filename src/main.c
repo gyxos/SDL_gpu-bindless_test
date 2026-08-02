@@ -104,7 +104,7 @@ const SDL_FColor COLOR_BLUE = {
 };
 
 bool init_gpu(App *app);
-bool init_gpu_resources(App *app);
+bool refresh_gpu_resources(App *app);
 bool load_gpu_shaders(App *app);
 bool init_gpu_pipeline(App *app);
 bool run_pipeline_color(App *app, SDL_GPUCommandBuffer *command_buffer, SDL_GPURenderPass *render_pass, SDL_GPUGraphicsPipeline *graphics_pipeline, Vec4 transform, SDL_FColor color);
@@ -129,7 +129,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     app->window = SDL_CreateWindow("SDL Bindless Test", 1200, 800, 0);
     init_gpu(app);
     SDL_ClaimWindowForGPUDevice(app->gpu_device, app->window);
-    init_gpu_resources(app);
+    refresh_gpu_resources(app);
     load_gpu_shaders(app);
     init_gpu_pipeline(app);
 
@@ -140,6 +140,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 
 SDL_AppResult SDL_AppIterate(void *appstate) {
     App *app = appstate;
+
+    refresh_gpu_resources(app);
 
     SDL_GPUCommandBuffer *command_buffer = SDL_AcquireGPUCommandBuffer(app->gpu_device);
     SDL_GPUTexture *swapchain_texture;
@@ -231,7 +233,7 @@ bool init_gpu(App *app) {
     SDL_PropertiesID props = SDL_CreateProperties();
     if (props == 0) { return false; }
 
-    // SDL_SetStringProperty(props, SDL_PROP_GPU_DEVICE_CREATE_NAME_STRING, "vulkan");
+    SDL_SetStringProperty(props, SDL_PROP_GPU_DEVICE_CREATE_NAME_STRING, "vulkan");
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_DEBUGMODE_BOOLEAN, true);
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_SHADERS_DXIL_BOOLEAN, true);
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_SHADERS_SPIRV_BOOLEAN, true);
@@ -336,7 +338,10 @@ SDL_GPUTexture * load_gpu_texture(App *app, const char *file) {
     return texture;
 }
 
-bool init_gpu_resources(App *app) {
+bool refresh_gpu_resources(App *app) {
+    if (app->sampler != NULL) {
+        SDL_ReleaseGPUSampler(app->gpu_device, app->sampler);
+    }
     app->sampler = SDL_CreateGPUSampler(app->gpu_device, &(SDL_GPUSamplerCreateInfo) {
         .min_filter = SDL_GPU_FILTER_LINEAR,
         .mag_filter = SDL_GPU_FILTER_LINEAR,
@@ -353,8 +358,14 @@ bool init_gpu_resources(App *app) {
         .enable_compare = false,
     });
 
+    if (app->texture_1 != NULL) {
+        SDL_ReleaseGPUTexture(app->gpu_device, app->texture_1);
+    }
     app->texture_1 = create_gpu_texture(app);
-    app->texture_2 = load_gpu_texture(app, "resources/test.png");
+
+    if (app->texture_2 == NULL) {
+        app->texture_2 = load_gpu_texture(app, "resources/test.png");
+    }
 
     return !(app->texture_1 == NULL || app->texture_2 == NULL);
 }
