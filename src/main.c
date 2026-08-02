@@ -182,16 +182,15 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     run_compute_color(app, command_buffer, compute_pass, app->pipeline_compute_color, texture_1_slot_green, COLOR_GREEN);
     SDL_EndGPUComputePass(compute_pass);
 
-    texture_1_slot_green = SDL_AcquireGPUTextureHandle(command_buffer, app->texture_1, NULL);
-
     color_target.texture = swapchain_texture;
     color_target.cycle = false;
 
     render_pass = SDL_BeginGPURenderPass(command_buffer, &color_target, 1, NULL);
 
+    SDL_GPUResourceHandle sampler_slot = SDL_AcquireGPUSamplerHandle(command_buffer, app->sampler);
+    texture_1_slot_green = SDL_AcquireGPUTextureHandle(command_buffer, app->texture_1, NULL);
     SDL_GPUResourceHandle texture_2_slot = SDL_AcquireGPUTextureHandle(command_buffer, app->texture_2, NULL);
 
-    SDL_GPUResourceHandle sampler_slot = SDL_AcquireGPUSamplerHandle(command_buffer, app->sampler);
     run_pipeline_texture(app, command_buffer, render_pass, app->pipeline_swapchain_texture, TRANSFORM_TOP_LEFT, sampler_slot, texture_1_slot_red);
     run_pipeline_texture(app, command_buffer, render_pass, app->pipeline_swapchain_texture, TRANSFORM_TOP_RIGHT, sampler_slot, texture_1_slot_green);
     run_pipeline_texture(app, command_buffer, render_pass, app->pipeline_swapchain_texture, TRANSFORM_BOTTOM_LEFT, sampler_slot, texture_2_slot);
