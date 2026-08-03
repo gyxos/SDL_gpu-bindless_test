@@ -46,12 +46,18 @@ if(APPLE)
     )
 endif()
 
-find_program(SLANGC NAMES slangc REQUIRED
-    HINTS "~/VulkanSDK/1.4.357.0/macOS/bin/")
-find_program(METALC NAMES metal REQUIRED
-    HINTS
-        "C:/Program Files/Metal Developer Tools/bin"
-        "/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.6.109.0.FFEA1u/Metal.xctoolchain/usr/bin")
+find_program(SLANGC NAMES slangc REQUIRED HINTS "~/VulkanSDK/1.4.357.0/macOS/bin/")
+
+if(APPLE)
+    execute_process(
+        COMMAND xcrun --sdk macosx --find metal
+        OUTPUT_VARIABLE METALC
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+else()
+    find_program(METALC NAMES metal REQUIRED HINTS "C:/Program Files/Metal Developer Tools/bin")
+endif()
+
 get_filename_component(METAL_BIN_DIR "${METALC}" DIRECTORY)
 
 set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
