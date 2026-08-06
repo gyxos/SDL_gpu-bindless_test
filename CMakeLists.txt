@@ -10,7 +10,7 @@ include(CPM.cmake)
 CPMAddPackage(
     NAME SDL3
     GIT_REPOSITORY https://github.com/gyxos/SDL.git
-    GIT_TAG feature/bindless2
+    GIT_TAG feature/bindless-gpu
     EXCLUDE_FROM_ALL YES
     OPTIONS
         "SDL_SHARED OFF"
