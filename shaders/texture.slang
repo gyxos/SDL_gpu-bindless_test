@@ -7,6 +7,14 @@ struct VertexUniforms {
 [vk::binding(0, 0)]
 ConstantBuffer<VertexUniforms> vertex_uniforms : register(b0, space0);
 
+struct FragmentUniforms {
+    SamplerState.Handle sampler;
+    Texture2D.Handle texture;
+};
+
+[vk::binding(0, 1)]
+ConstantBuffer<FragmentUniforms> fragment_uniforms : register(b0, space1);
+
 struct VertOut {
     float4 position : SV_Position;
     float2 texcoord : TEXCOORD;
@@ -23,14 +31,6 @@ VertOut vs_main(uint vertex_id: SV_VertexID) {
 
     return output;
 }
-
-struct FragmentUniforms {
-    SamplerState.Handle sampler;
-    Texture2D.Handle texture;
-};
-
-[vk::binding(0, 1)]
-ConstantBuffer<FragmentUniforms> fragment_uniforms : register(b0, space1);
 
 [shader("fragment")]
 float4 fs_main(VertOut fin) : SV_Target0 {

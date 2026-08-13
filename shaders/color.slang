@@ -11,6 +11,13 @@ struct VertOut {
     float4 position : SV_Position;
 };
 
+struct FragmentUniforms {
+    float4 color;
+};
+
+[[vk::binding(0, 1)]]
+ConstantBuffer<FragmentUniforms> fragment_uniforms : register(b0, space1);
+
 [shader("vertex")]
 VertOut vs_main(uint vertex_id: SV_VertexID) {
     uint index = QUAD_INDEX[vertex_id];
@@ -21,13 +28,6 @@ VertOut vs_main(uint vertex_id: SV_VertexID) {
 
     return output;
 }
-
-struct FragmentUniforms {
-    float4 color;
-};
-
-[[vk::binding(0, 1)]]
-ConstantBuffer<FragmentUniforms> fragment_uniforms : register(b0, space1);
 
 [shader("fragment")]
 float4 fs_main(VertOut fin) : SV_Target0 {
