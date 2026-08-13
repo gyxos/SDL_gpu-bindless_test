@@ -1,11 +1,11 @@
 #include "common.slangh"
 
-struct VertUniforms {
+struct VertexUniforms {
     float4 transform;
 };
 
 [vk::binding(0, 0)]
-ConstantBuffer<VertUniforms> v_uniforms : register(b0, space0);
+ConstantBuffer<VertexUniforms> vertex_uniforms : register(b0, space0);
 
 struct VertOut {
     float4 position : SV_Position;
@@ -15,7 +15,7 @@ struct VertOut {
 [shader("vertex")]
 VertOut vs_main(uint vertex_id: SV_VertexID) {
     uint index = QUAD_INDEX[vertex_id];
-    float2 position = QUAD_POSITION[index] * v_uniforms.transform.xy + v_uniforms.transform.zw;
+    float2 position = QUAD_POSITION[index] * vertex_uniforms.transform.xy + vertex_uniforms.transform.zw;
 
     VertOut output;
     output.position = float4(position, 0.0, 1.0);
@@ -24,18 +24,18 @@ VertOut vs_main(uint vertex_id: SV_VertexID) {
     return output;
 }
 
-struct FragUniforms {
-    DescriptorHandle<SamplerState> sampler;
-    DescriptorHandle<Texture2D> texture;
+struct FragmentUniforms {
+    SamplerState.Handle sampler;
+    Texture2D.Handle texture;
 };
 
 [vk::binding(0, 1)]
-ConstantBuffer<FragUniforms> f_uniforms : register(b0, space1);
+ConstantBuffer<FragmentUniforms> fragment_uniforms : register(b0, space1);
 
 [shader("fragment")]
 float4 fs_main(VertOut fin) : SV_Target0 {
-    return f_uniforms.texture.Sample(
-        f_uniforms.sampler,
+    return fragment_uniforms.texture.Sample(
+        fragment_uniforms.sampler,
         fin.texcoord
     );
 }

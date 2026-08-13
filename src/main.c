@@ -170,6 +170,8 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     SDL_EndGPURenderPass(render_pass);
 
     // When we resolve we get the texture at the time
+    // This is a bit naughty as we are acquiring it in one render pass to use in another
+    // But we are doing it as an example to show cycled textures
     SDL_GPUResourceHandle texture_1_slot_red = SDL_AcquireGPUTextureHandle(command_buffer, app->texture_1, NULL);
 
     SDL_GPUComputePass *compute_pass = SDL_BeginGPUComputePass(command_buffer, NULL, 0, NULL, 0);

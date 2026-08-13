@@ -1,7 +1,7 @@
 #include "common.slangh"
 
 struct Uniforms {
-    DescriptorHandle<RWTexture2D> texture;
+    RWTexture2D.Handle texture;
     float4 color;
 };
 

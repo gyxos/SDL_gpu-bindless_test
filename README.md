@@ -20,7 +20,6 @@ This is a test repo for a proposed SDL GPU bindless api, which can be found http
   - space 0: b0-b3 vertex uniforms or compute uniforms
   - space 1: b0-b3 fragment uniforms
   - global: sampler + resource descriptors
-
 - Metal: Handles are resources, no bindings required
 - Vulkan:
   - set 0 binding 0-3: vertex uniforms or compute uniforms
@@ -38,15 +37,20 @@ SDL_GPUDevice *device = SDL_CreateGPUDeviceWithProperties(props);
 
 // ****************** Rendering ******************
 
-// Resolve the resource to a slot
-SDL_GPUResourceHandle handle = SDL_ResolveGPUTexture(gpu_device, texture, NULL);
-if (handle == 0) {
-    /* resolving failed */
-}
+SDL_GPUBeginRenderPass(command_buffer, ...);
 
-// Pass that slot in constants or a buffer etc
+// Resolve the resources to handles
+
+SDL_GPUResourceHandle sampler_handle = SDL_AcquireGPUSamplerHandle(command_buffer, sampler);
+if (sampler_handle == 0) { /* resolving failed */ }
+
+SDL_GPUResourceHandle texture_handle = SDL_AcquireGPUTextureHandle(gpu_device, texture, NULL); // if writing then the NULL needs to be replaced with a SDL_GPUStorageTextureReadWriteBinding*
+if (texture_handle == 0) { /* resolving failed */ }
+
+// Pass those handles in constants
 Constants constants = {
-    .texture_handle = handle,
+    .sampler = sampler_handle,
+    .texture = texture_handle,
 };
 
 SDL_PushGPUFragmentUniformData(..., constants, sizeof(Constants));
