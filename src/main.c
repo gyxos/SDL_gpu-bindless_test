@@ -1,9 +1,15 @@
 #include <string.h>
+
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL_main.h>
+
+#include <SDL3/SDL_events.h>
 #include <SDL3/SDL_gpu.h>
 #include <SDL3/SDL_hints.h>
+#include <SDL3/SDL_keycode.h>
 #include <SDL3/SDL_log.h>
+#include <SDL3/SDL_video.h>
+
 #include <vulkan/vulkan.h>
 
 #define TEXTURE_SIZE 256
@@ -13,6 +19,7 @@ typedef struct App App;
 struct App {
     SDL_Window *window;
     SDL_GPUDevice *gpu_device;
+    SDL_GPUPresentMode present_mode;
 
     SDL_GPUSampler *sampler;
     SDL_GPUTexture *texture_1;
@@ -123,6 +130,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     app->window = SDL_CreateWindow("SDL Bindless Test", 1200, 800, 0);
     init_gpu(app);
     SDL_ClaimWindowForGPUDevice(app->gpu_device, app->window);
+    SDL_SetGPUSwapchainParameters(app->gpu_device, app->window, SDL_GPU_SWAPCHAINCOMPOSITION_SDR, app->present_mode);
     refresh_gpu_resources(app);
     load_gpu_shaders(app);
     init_gpu_pipeline(app);
@@ -209,6 +217,25 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 
     if (event->type == SDL_EVENT_QUIT || (event->type == SDL_EVENT_KEY_DOWN && event->key.scancode == SDL_SCANCODE_ESCAPE)) {
         return SDL_APP_SUCCESS;
+    }
+
+    if (event->type == SDL_EVENT_KEY_DOWN && event->key.key == SDLK_RETURN && !event->key.repeat && event->key.mod & SDL_KMOD_ALT) {
+        bool is_fullscreen = (SDL_GetWindowFlags(app->window) & SDL_WINDOW_FULLSCREEN) != 0;
+        SDL_SetWindowFullscreen(app->window, !is_fullscreen);
+    }
+
+    if (event->type == SDL_EVENT_KEY_DOWN && event->key.key == SDLK_V && !event->key.repeat) {
+        bool supports_present_mode = false;
+        while (!supports_present_mode) {
+            app->present_mode = (app->present_mode + 1) % 3;
+            supports_present_mode = SDL_WindowSupportsGPUPresentMode(app->gpu_device, app->window, app->present_mode);
+            if (!supports_present_mode) {
+                SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Gpu does not support present mode %d", app->present_mode);
+            }
+        }
+
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Setting Gpu present mode to %d", app->present_mode);
+        SDL_SetGPUSwapchainParameters(app->gpu_device, app->window, SDL_GPU_SWAPCHAINCOMPOSITION_SDR, app->present_mode);
     }
 
     return SDL_APP_CONTINUE;
